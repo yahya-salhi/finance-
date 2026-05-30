@@ -8,7 +8,7 @@ export function formatCurrency(amount: number, symbol: string): string {
     maximumFractionDigits: 2,
   });
   
-  // Handle cases where the symbol might be placed after the amount in some locales,
-  // but the spec suggests symbol + amount.
-  return `${symbol}${formatted}`;
+  // Add a space if the symbol is more than one character (e.g. 'DT 10.00')
+  const spacing = symbol.length > 1 ? ' ' : '';
+  return `${symbol}${spacing}${formatted}`;
 }

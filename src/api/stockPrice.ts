@@ -12,28 +12,25 @@ export async function fetchEODPrice(
   if (!apiKey) return null;
 
   try {
-    const url = `${BASE}?function=TIME_SERIES_DAILY&symbol=${ticker}&apikey=${apiKey}&outputsize=compact`;
+    const url = `${BASE}?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${apiKey}`;
     const res = await fetch(url);
     const data = await res.json();
 
-    // Check for Alpha Vantage error/limit messages
     if (data['Note']) {
-      console.warn('Alpha Vantage API limit reached');
+      console.warn('Alpha Vantage API limit reached (5 calls/min, 25/day)');
       return null;
     }
 
-    if (data['Error Message']) {
-      console.error(`Error fetching price for ${ticker}:`, data['Error Message']);
+    const quote = data['Global Quote'];
+    if (!quote || !quote['05. price']) {
+      console.error(`No price data found for ${ticker}`, data);
       return null;
     }
 
-    const series = data['Time Series (Daily)'];
-    if (!series) return null;
-
-    const latestDate = Object.keys(series)[0];
-    const price = parseFloat(series[latestDate]['4. close']);
-    
-    return { price, date: latestDate };
+    return { 
+      price: parseFloat(quote['05. price']), 
+      date: quote['07. latest trading day'] || new Date().toISOString().split('T')[0]
+    };
   } catch (error) {
     console.error(`Failed to fetch price for ${ticker}:`, error);
     return null;
