@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { db } from '../db';
+import { supabase } from '../lib/supabase';
 import type { IncomeEntry } from '../types';
 
 interface IncomeStore {
@@ -17,7 +17,25 @@ export const useIncomeStore = create<IncomeStore>((set, get) => ({
   load: async () => {
     set({ isLoading: true });
     try {
-      const entries = await db.income.orderBy('date').reverse().toArray();
+      const { data, error } = await supabase
+        .from('income')
+        .select('*')
+        .order('date', { ascending: false });
+
+      if (error) throw error;
+      
+      // Map Supabase fields to our type if necessary (snake_case to camelCase)
+      const entries: IncomeEntry[] = (data || []).map(item => ({
+        id: item.id,
+        amount: item.amount,
+        label: item.label,
+        category: item.category as any,
+        date: item.date,
+        recurrence: item.recurrence as any,
+        notes: item.notes,
+        createdAt: item.created_at,
+      }));
+
       set({ entries, isLoading: false });
     } catch (error) {
       console.error('Failed to load income entries:', error);
@@ -26,10 +44,17 @@ export const useIncomeStore = create<IncomeStore>((set, get) => ({
   },
   add: async (entry) => {
     try {
-      await db.income.add({
-        ...entry,
-        createdAt: new Date().toISOString(),
-      });
+      const { error } = await supabase.from('income').insert([
+        {
+          amount: entry.amount,
+          label: entry.label,
+          category: entry.category,
+          date: entry.date,
+          recurrence: entry.recurrence,
+          notes: entry.notes,
+        },
+      ]);
+      if (error) throw error;
       await get().load();
     } catch (error) {
       console.error('Failed to add income entry:', error);
@@ -38,7 +63,18 @@ export const useIncomeStore = create<IncomeStore>((set, get) => ({
   },
   update: async (id, entry) => {
     try {
-      await db.income.update(id, entry);
+      const { error } = await supabase
+        .from('income')
+        .update({
+          amount: entry.amount,
+          label: entry.label,
+          category: entry.category,
+          date: entry.date,
+          recurrence: entry.recurrence,
+          notes: entry.notes,
+        })
+        .eq('id', id);
+      if (error) throw error;
       await get().load();
     } catch (error) {
       console.error('Failed to update income entry:', error);
@@ -47,7 +83,8 @@ export const useIncomeStore = create<IncomeStore>((set, get) => ({
   },
   remove: async (id) => {
     try {
-      await db.income.delete(id);
+      const { error } = await supabase.from('income').delete().eq('id', id);
+      if (error) throw error;
       await get().load();
     } catch (error) {
       console.error('Failed to remove income entry:', error);
