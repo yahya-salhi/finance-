@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSettingsStore } from '../store/useSettingsStore';
-import { Eye, EyeOff, Save, Trash2, CheckCircle2 } from 'lucide-react';
+import { Eye, EyeOff, Save, Trash2, CheckCircle2, CloudUpload, Loader2 } from 'lucide-react';
+import { checkLocalDataExists, migrateDexieToSupabase } from '../utils/migration';
+import { useIncomeStore } from '../store/useIncomeStore';
+import { useExpenseStore } from '../store/useExpenseStore';
+import { usePortfolioStore } from '../store/usePortfolioStore';
 
 const CURRENCIES = [
   { code: 'USD', symbol: '$' },
@@ -21,11 +25,24 @@ export default function Settings() {
     setCurrency 
   } = useSettingsStore();
 
+  const loadIncome = useIncomeStore(s => s.load);
+  const loadExpenses = useExpenseStore(s => s.load);
+  const loadPortfolio = usePortfolioStore(s => s.load);
+
   const [geminiKey, setLocalGeminiKey] = useState(geminiApiKey);
   const [alphaKey, setLocalAlphaKey] = useState(alphaVantageApiKey);
   const [showGemini, setShowGemini] = useState(false);
   const [showAlpha, setShowAlpha] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // Migration state
+  const [localDataExists, setLocalDataExists] = useState(false);
+  const [migrating, setMigrating] = useState(false);
+  const [migrationResult, setMigrationResult] = useState<{ income: number; expenses: number; portfolio: number } | null>(null);
+
+  useEffect(() => {
+    checkLocalDataExists().then(setLocalDataExists);
+  }, []);
 
   const handleSaveKeys = () => {
     setGeminiKey(geminiKey);
@@ -38,6 +55,27 @@ export default function Settings() {
     const selected = CURRENCIES.find(c => c.code === e.target.value);
     if (selected) {
       setCurrency(selected.code, selected.symbol);
+    }
+  };
+
+  const handleMigration = async () => {
+    if (!confirm('This will upload all local data to your cloud account. Existing data in the cloud will not be overwritten.')) {
+      return;
+    }
+
+    setMigrating(true);
+    const results = await migrateDexieToSupabase();
+    setMigrating(false);
+    
+    if (results.errors.length > 0) {
+      alert('Migration had some errors: \n' + results.errors.join('\n'));
+    } else {
+      setMigrationResult(results);
+      setLocalDataExists(false); // Hide the section after success
+      // Reload stores to show new data
+      loadIncome();
+      loadExpenses();
+      loadPortfolio();
     }
   };
 
@@ -57,6 +95,39 @@ export default function Settings() {
       </div>
 
       <div className="grid gap-6">
+        {/* Migration Section */}
+        {localDataExists && (
+          <section className="card p-6 border-blue-100 bg-blue-50/50 space-y-4">
+            <div className="flex items-center gap-3">
+              <CloudUpload className="text-blue-600 w-6 h-6" />
+              <h2 className="text-lg font-semibold text-blue-900">Cloud Migration</h2>
+            </div>
+            <p className="text-sm text-blue-800">
+              We detected data in your local browser storage. Migrate it to your cloud account to access it from any device.
+            </p>
+            <button
+              onClick={handleMigration}
+              disabled={migrating}
+              className="btn btn-primary flex items-center gap-2"
+            >
+              {migrating ? <Loader2 className="animate-spin" size={18} /> : <CloudUpload size={18} />}
+              {migrating ? 'Migrating...' : 'Migrate Local Data to Cloud'}
+            </button>
+          </section>
+        )}
+
+        {migrationResult && (
+          <div className="card p-4 bg-green-50 border-green-200 flex items-start gap-3">
+            <CheckCircle2 className="text-green-600 mt-0.5" size={20} />
+            <div>
+              <h3 className="text-sm font-bold text-green-900">Migration Successful!</h3>
+              <p className="text-xs text-green-700">
+                Migrated: {migrationResult.income} income, {migrationResult.expenses} expenses, {migrationResult.portfolio} positions.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* API Keys Section */}
         <section className="card p-6 space-y-6">
           <h2 className="text-lg font-semibold text-slate-800 border-bottom pb-2">API Configuration</h2>
