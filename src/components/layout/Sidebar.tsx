@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   TrendingUp, 
@@ -6,8 +6,10 @@ import {
   Repeat, 
   BarChart2, 
   MessageSquare, 
-  Settings as SettingsIcon 
+  Settings as SettingsIcon,
+  LogOut
 } from 'lucide-react';
+import { useAuthStore } from '../../store/useAuthStore';
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -20,6 +22,18 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const { signOut, user } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      navigate('/login');
+    } catch (error) {
+      console.error('Failed to logout:', error);
+    }
+  };
+
   return (
     <aside className="w-64 bg-white border-r border-slate-200 h-screen flex flex-col fixed left-0 top-0">
       <div className="p-6">
@@ -27,6 +41,11 @@ export default function Sidebar() {
           <TrendingUp className="w-6 h-6" />
           <span>Finance Tracker</span>
         </h1>
+        {user && (
+          <p className="text-[10px] text-slate-400 mt-1 truncate">
+            {user.email}
+          </p>
+        )}
       </div>
 
       <nav className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
@@ -48,8 +67,15 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="p-4 border-t border-slate-100">
-        <div className="text-xs text-slate-400 text-center">
+      <div className="p-4 border-t border-slate-100 space-y-2">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>Log Out</span>
+        </button>
+        <div className="text-[10px] text-slate-400 text-center">
           Finance Tracker v1.0
         </div>
       </div>
