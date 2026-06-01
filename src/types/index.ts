@@ -69,4 +69,6 @@ export interface Settings {
   alphaVantageApiKey: string;
   currency: string;         // e.g. 'USD', 'EUR', 'TND'
   currencySymbol: string;
+  subscriptionStatus: 'active' | 'inactive' | 'canceled' | 'past_due';
+  stripeCustomerId?: string;
 }

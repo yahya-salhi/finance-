@@ -36,4 +36,5 @@ GEMINI.md
 
 #mcp server
 .gemini/settings.json
+.github/mcp-config.json
 opencode.json

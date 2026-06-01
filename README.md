@@ -7,6 +7,7 @@ An AI-powered personal finance management application built with **React**, **Ty
 - **Dashboard:** Real-time overview of your financial health with interactive charts.
 - **Income & Expense Tracking:** Categorize and monitor your cash flow.
 - **Portfolio Management:** Track your stock positions and investments.
+- **Monthly Subscription:** Affordable access for 9.99 TND per month.
 - **AI Financial Assistant:** Get personalized financial insights and advice powered by **Google Gemini**.
 - **Cloud Sync:** Secure data persistence and multi-device synchronization via **Supabase**.
 - **Social Authentication:** Secure login using GitHub or Google OAuth.

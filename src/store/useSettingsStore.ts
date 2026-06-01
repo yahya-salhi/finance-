@@ -15,6 +15,8 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
   alphaVantageApiKey: '',
   currency: 'USD',
   currencySymbol: '$',
+  subscriptionStatus: 'inactive',
+  stripeCustomerId: '',
   isLoading: false,
 
   load: async () => {
@@ -25,7 +27,7 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
 
       const { data, error } = await supabase
         .from('profiles')
-        .select('gemini_api_key, alpha_vantage_api_key, currency, currency_symbol')
+        .select('gemini_api_key, alpha_vantage_api_key, currency, currency_symbol, subscription_status, stripe_customer_id')
         .eq('id', user.id)
         .single();
 
@@ -37,6 +39,8 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
           alphaVantageApiKey: data.alpha_vantage_api_key || '',
           currency: data.currency || 'USD',
           currencySymbol: data.currency_symbol || '$',
+          subscriptionStatus: data.subscription_status || 'inactive',
+          stripeCustomerId: data.stripe_customer_id || '',
         });
       }
     } catch (error) {

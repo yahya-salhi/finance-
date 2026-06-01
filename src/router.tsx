@@ -9,11 +9,23 @@ import Portfolio from './pages/Portfolio';
 import Assistant from './pages/Assistant';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
+import Checkout from './pages/Checkout';
+import PaymentSuccess from './pages/PaymentSuccess';
 
 export const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    path: '/checkout',
+    element: <ProtectedRoute allowUnpaid />,
+    children: [{ path: '', element: <Checkout /> }],
+  },
+  {
+    path: '/payment-success',
+    element: <ProtectedRoute allowUnpaid />,
+    children: [{ path: '', element: <PaymentSuccess /> }],
   },
   {
     path: '/',
