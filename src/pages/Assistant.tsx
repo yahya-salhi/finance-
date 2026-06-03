@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, startTransition } from 'react';
 import { useIncomeStore } from '../store/useIncomeStore';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { usePortfolioStore } from '../store/usePortfolioStore';
@@ -50,7 +50,9 @@ export default function Assistant() {
     try {
       const context = buildFinancialContext(income, expenses, positions, currencySymbol);
       const response = await askGemini(userMessage, context, geminiApiKey, currencySymbol);
-      setMessages(prev => [...prev, { role: 'assistant', content: response }]);
+      startTransition(() => {
+        setMessages(prev => [...prev, { role: 'assistant', content: response }]);
+      });
     } catch (err: any) {
       setError(err.message || 'Failed to get a response. Please try again.');
     } finally {
@@ -114,20 +116,22 @@ export default function Assistant() {
             </div>
           ))
         )}
-        {isLoading && (
+        {isLoading ? (
           <div className="flex justify-start">
             <div className="bg-white border border-slate-200 rounded-2xl rounded-bl-none p-4 shadow-sm">
-              <Loader2 size={20} className="animate-spin text-blue-600" />
+              <div className="animate-spin">
+                <Loader2 size={20} className="text-blue-600" />
+              </div>
             </div>
           </div>
-        )}
-        {error && (
+        ) : null}
+        {error ? (
           <div className="flex justify-center">
             <div className="bg-red-50 text-red-600 text-xs px-3 py-1.5 rounded-full border border-red-100">
               {error}
             </div>
           </div>
-        )}
+        ) : null}
         <div ref={messagesEndRef} />
       </div>
 

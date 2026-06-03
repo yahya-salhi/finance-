@@ -1,13 +1,13 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import type { ExpenseEntry } from '../../types';
 import { EXPENSE_CATEGORIES } from '../../utils/categories';
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 
 interface SpendingDonutProps {
   expenses: ExpenseEntry[];
 }
 
-export default function SpendingDonut({ expenses }: SpendingDonutProps) {
+const SpendingDonut = memo(function SpendingDonut({ expenses }: SpendingDonutProps) {
   const data = useMemo(() => {
     const categories: Record<string, { name: string, value: number, color: string }> = {};
     
@@ -60,4 +60,6 @@ export default function SpendingDonut({ expenses }: SpendingDonutProps) {
       </ResponsiveContainer>
     </div>
   );
-}
+});
+
+export default SpendingDonut;

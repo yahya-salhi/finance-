@@ -1,5 +1,5 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { subMonths, format, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import type { IncomeEntry, ExpenseEntry } from '../../types';
 
@@ -8,7 +8,7 @@ interface CashFlowBarProps {
   expenses: ExpenseEntry[];
 }
 
-export default function CashFlowBar({ income, expenses }: CashFlowBarProps) {
+const CashFlowBar = memo(function CashFlowBar({ income, expenses }: CashFlowBarProps) {
   const data = useMemo(() => {
     const months = [];
     for (let i = 5; i >= 0; i--) {
@@ -60,4 +60,6 @@ export default function CashFlowBar({ income, expenses }: CashFlowBarProps) {
       </ResponsiveContainer>
     </div>
   );
-}
+});
+
+export default CashFlowBar;
