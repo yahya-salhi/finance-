@@ -20,11 +20,13 @@ function App() {
 
   useEffect(() => {
     if (user) {
-      // Load data only when authenticated
-      loadSettings();
-      loadIncome();
-      loadExpenses();
-      loadPortfolio();
+      // Load all data in parallel to eliminate waterfalls (async-parallel)
+      Promise.all([
+        loadSettings(),
+        loadIncome(),
+        loadExpenses(),
+        loadPortfolio()
+      ]).catch(console.error);
     }
   }, [user, loadSettings, loadIncome, loadExpenses, loadPortfolio]);
 

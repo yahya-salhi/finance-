@@ -29,7 +29,7 @@ export default function StatCard({
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-slate-500">{label}</p>
-          <h3 className={`text-2xl font-bold mt-1 ${
+          <h3 className={`text-2xl font-bold mt-1 font-mono ${
             color === 'green' ? 'text-green-600' : 
             color === 'red' ? 'text-red-500' : 'text-slate-900'
           }`}>

@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useDeferredValue } from 'react';
 import { useIncomeStore } from '../store/useIncomeStore';
 import { useExpenseStore } from '../store/useExpenseStore';
 import { usePortfolioStore } from '../store/usePortfolioStore';
 import { useSettingsStore } from '../store/useSettingsStore';
-import { TrendingUp, TrendingDown, DollarSign, BarChart2, Repeat, Clock } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, BarChart2, Repeat, Clock, Loader2 } from 'lucide-react';
 import MonthSelector from '../components/ui/MonthSelector';
 import StatCard from '../components/ui/StatCard';
 import SpendingDonut from '../components/charts/SpendingDonut';
@@ -19,10 +19,14 @@ export default function Dashboard() {
   const { positions } = usePortfolioStore();
   const { currencySymbol } = useSettingsStore();
   const [currentDate, setCurrentDate] = useState(new Date());
+  
+  // Use deferred value for the month filtering to keep UI responsive
+  const deferredDate = useDeferredValue(currentDate);
+  const isStale = currentDate !== deferredDate;
 
   const filteredData = useMemo(() => {
-    const month = currentDate.getMonth();
-    const year = currentDate.getFullYear();
+    const month = deferredDate.getMonth();
+    const year = deferredDate.getFullYear();
     
     const monthIncome = income.filter(e => {
       const d = new Date(e.date);
@@ -35,7 +39,7 @@ export default function Dashboard() {
     });
     
     return { monthIncome, monthExpenses };
-  }, [income, expenses, currentDate]);
+  }, [income, expenses, deferredDate]);
 
   const totals = useMemo(() => {
     const incomeTotal = filteredData.monthIncome.reduce((sum, e) => sum + e.amount, 0);
@@ -73,46 +77,56 @@ export default function Dashboard() {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Financial Overview</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-slate-900">Financial Overview</h1>
+            {isStale ? (
+              <div className="animate-spin">
+                <Loader2 className="text-slate-400" size={18} />
+              </div>
+            ) : null}
+          </div>
           <p className="text-slate-500">Welcome back! Here's what's happening with your money.</p>
         </div>
         <MonthSelector currentDate={currentDate} onChange={setCurrentDate} />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard
-          label="Total Income"
-          value={formatCurrency(totals.incomeTotal, currencySymbol)}
-          icon={TrendingUp}
-          color="green"
-        />
-        <StatCard
-          label="Total Expenses"
-          value={formatCurrency(totals.expenseTotal, currencySymbol)}
-          icon={TrendingDown}
-          color="red"
-        />
-        <StatCard
-          label="Net Cash Flow"
-          value={formatCurrency(Math.abs(totals.cashFlow), totals.cashFlow >= 0 ? '+' : '-')}
-          icon={DollarSign}
-          color={totals.cashFlow >= 0 ? 'green' : 'red'}
-        />
-      </div>
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-200 ${isStale ? 'opacity-50' : 'opacity-100'}`}>
+        <div className="lg:col-span-1">
+          <StatCard
+            label="Total Income"
+            value={formatCurrency(totals.incomeTotal, currencySymbol)}
+            icon={TrendingUp}
+            color="green"
+          />
+        </div>
+        <div className="lg:col-span-1">
+          <StatCard
+            label="Total Expenses"
+            value={formatCurrency(totals.expenseTotal, currencySymbol)}
+            icon={TrendingDown}
+            color="red"
+          />
+        </div>
+        <div className="lg:col-span-1">
+          <StatCard
+            label="Net Cash Flow"
+            value={formatCurrency(Math.abs(totals.cashFlow), totals.cashFlow >= 0 ? '+' : '-')}
+            icon={DollarSign}
+            color={totals.cashFlow >= 0 ? 'green' : 'red'}
+          />
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <section className="card p-6">
+        <section className="card p-6 lg:col-span-1">
           <h2 className="text-lg font-bold text-slate-900 mb-6">Spending by Category</h2>
           <SpendingDonut expenses={filteredData.monthExpenses} />
         </section>
-        <section className="card p-6">
+
+        <section className="card p-6 lg:col-span-2">
           <h2 className="text-lg font-bold text-slate-900 mb-6">Cash Flow History</h2>
           <CashFlowBar income={income} expenses={expenses} />
         </section>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="space-y-6">
+        <div className="lg:col-span-1 space-y-6">
           <section className="card p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-slate-900">Portfolio Snapshot</h2>
@@ -121,7 +135,7 @@ export default function Dashboard() {
             <div className="flex items-end justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-500">Total Portfolio Value</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">
+                <p className="text-3xl font-bold text-slate-900 mt-1 font-mono">
                   {formatCurrency(totals.portfolioValue, currencySymbol)}
                 </p>
               </div>
@@ -140,7 +154,7 @@ export default function Dashboard() {
             <div className="flex items-end justify-between">
               <div>
                 <p className="text-sm font-medium text-slate-500">Monthly Recurring Cost</p>
-                <p className="text-2xl font-bold text-slate-900 mt-1">
+                <p className="text-2xl font-bold text-slate-900 mt-1 font-mono">
                   {formatCurrency(totals.subscriptionsTotal, currencySymbol)}
                 </p>
               </div>
@@ -149,12 +163,12 @@ export default function Dashboard() {
           </section>
         </div>
 
-        <section className="card overflow-hidden">
+        <section className="card overflow-hidden lg:col-span-2">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-900">Recent Activity</h2>
             <Clock size={18} className="text-slate-400" />
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 content-visibility-auto contain-intrinsic-size-[500px]">
             {recentActivity.length > 0 ? (
               recentActivity.map((item, idx) => {
                 const isIncome = 'type' in item && item.type === 'income';
@@ -174,7 +188,7 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`text-sm font-bold ${isIncome ? 'text-green-600' : 'text-red-500'}`}>
+                      <p className={`text-sm font-bold font-mono ${isIncome ? 'text-green-600' : 'text-red-500'}`}>
                         {isIncome ? '+' : '-'}{formatCurrency(item.amount, currencySymbol)}
                       </p>
                       <Badge color={category.color} className="mt-1">{category.label}</Badge>

@@ -38,3 +38,11 @@ GEMINI.md
 .gemini/settings.json
 .github/mcp-config.json
 opencode.json
+
+# Markdown files (except README.md)
+*.md
+!README.md
+
+# Lock files and metadata
+skills-lock.json
+metadata.json
